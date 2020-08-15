@@ -1103,7 +1103,7 @@ public class VolumeDialogImpl implements VolumeDialog {
             switch (mState.ringerModeInternal) {
                 case AudioManager.RINGER_MODE_VIBRATE:
                     ringerDrawable = mSysUIContext.getDrawable(
-                        mSysUIR.drawable("ic_volume_ringer_vibrate"));
+                        mSysUIR.drawable("ic_volume_ringer_vibrate_vol"));
                     addAccessibilityDescription(mRingerIcon, RINGER_MODE_VIBRATE,
                             mSysUIContext.getString(mSysUIR.string("volume_ringer_hint_mute")));
                     mRingerIcon.setTag(Events.ICON_STATE_VIBRATE);
@@ -1303,7 +1303,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         row.icon.setEnabled(iconEnabled);
         row.icon.setAlpha(iconEnabled ? 1 : 0.5f);
         final int iconRes =
-                isRingVibrate ? mSysUIR.drawable("ic_volume_ringer_vibrate")
+                isRingVibrate ? mSysUIR.drawable("ic_volume_ringer_vibrate_vol")
                 : isRingSilent || zenMuted ? row.iconMuteRes
                 : ss.routedToBluetooth ?
                         (ss.muted ? mSysUIR.drawable("ic_volume_media_bt_mute")
@@ -1314,7 +1314,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         row.icon.setImageDrawable(iconResDrawable);
         button.icon.setImageDrawable(iconResDrawable);
         row.iconState =
-                iconRes == mSysUIR.drawable("ic_volume_ringer_vibrate") ? Events.ICON_STATE_VIBRATE
+                iconRes == mSysUIR.drawable("ic_volume_ringer_vibrate_vol") ? Events.ICON_STATE_VIBRATE
                 : (iconRes == mSysUIR.drawable("ic_volume_media_bt_mute") || iconRes == row.iconMuteRes)
                         ? Events.ICON_STATE_MUTE
                 : (iconRes == mSysUIR.drawable("ic_volume_media_bt") || iconRes == row.iconRes)
