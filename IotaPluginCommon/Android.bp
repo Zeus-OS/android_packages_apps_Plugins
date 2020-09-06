@@ -1,0 +1,15 @@
+android_library {
+    name: "IotaPluginCommon",
+    static_libs: [
+        "VolumePluginCommon",
+        "SystemUIPluginLib",
+        "androidx.appcompat_appcompat",
+    ],
+    resource_dirs: [
+        "res",
+    ],
+    manifest: "AndroidManifest.xml",
+    srcs: ["src/**/*.java"],
+
+    aaptflags: ["--auto-add-overlay"],
+}

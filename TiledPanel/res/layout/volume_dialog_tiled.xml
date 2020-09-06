@@ -30,6 +30,7 @@
         android:minWidth="@dimen/volume_dialog_panel_width"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:gravity="right"
         android:background="@android:color/transparent"
         android:paddingRight="@dimen/volume_dialog_panel_transparent_padding_right"
         android:paddingTop="@dimen/volume_dialog_panel_transparent_padding"
@@ -59,7 +60,7 @@
                 <co.potatoproject.plugin.volume.common.AlphaOptimizedImageButton
                     android:id="@+id/os_icon"
                     style="@style/VolumeButtons"
-                    android:background="@drawable/rounded_ripple"
+                    android:background="@drawable/ripple_drawable_20dp"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="fitCenter"
@@ -81,7 +82,7 @@
                 <co.potatoproject.plugin.volume.common.AlphaOptimizedImageButton
                     android:id="@+id/ringer_icon"
                     style="@style/VolumeButtons"
-                    android:background="@drawable/rounded_ripple"
+                    android:background="@drawable/ripple_drawable_20dp"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="fitCenter"
@@ -105,6 +106,11 @@
             android:orientation="horizontal"
             android:clipToPadding="false"
             android:clipChildren="false">
+
+            <include layout="@layout/synth_media_card"
+                android:layout_width="120dp"
+                android:layout_height="120dp"/>
+
             <LinearLayout
                 xmlns:android="http://schemas.android.com/apk/res/android"
                 android:id="@+id/stream_switch"
@@ -166,7 +172,7 @@
             <co.potatoproject.plugin.volume.common.CaptionsToggleImageButton
                 android:id="@+id/odi_captions_icon"
                 style="@style/VolumeButtons"
-                android:background="@drawable/rounded_ripple"
+                android:background="@drawable/ripple_drawable_20dp"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:tint="@color/caption_tint_color_selector"
@@ -174,7 +180,6 @@
                 android:soundEffectsEnabled="false"
                 sysui:optedOut="false"/>
         </FrameLayout>
-
     </LinearLayout>
 
     <ViewStub

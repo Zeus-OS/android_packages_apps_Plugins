@@ -49,7 +49,7 @@
             <co.potatoproject.plugin.volume.common.AlphaOptimizedImageButton
                 android:id="@+id/ringer_icon"
                 style="@style/VolumeButtons"
-                android:background="@drawable/rounded_ripple"
+                android:background="@drawable/ripple_drawable_20dp"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="fitCenter"
@@ -65,70 +65,87 @@
         </FrameLayout>
 
         <LinearLayout
-            android:id="@+id/main"
+            android:id="@+id/main_frame"
             android:minWidth="@dimen/volume_dialog_panel_width"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="right"
             android:layout_gravity="right"
-            android:orientation="vertical"
-            android:translationZ="@dimen/volume_dialog_elevation"
-            android:clipChildren="false"
+            android:orientation="horizontal"
             android:clipToPadding="false"
-            android:background="@drawable/rounded_bg_full" >
+            android:clipChildren="false"
+            android:animateLayoutChanges="true">
+            <include layout="@layout/synth_media_card"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:animateLayoutChanges="true"/>
             <LinearLayout
-                android:id="@+id/volume_dialog_rows"
+                android:id="@+id/main"
+                android:minWidth="@dimen/volume_dialog_panel_width"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minWidth="@dimen/volume_dialog_panel_width"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingRight="@dimen/volume_dialog_stream_padding"
-                android:paddingLeft="@dimen/volume_dialog_stream_padding"
-                android:animateLayoutChanges="true">
-                    <!-- volume rows added and removed here! :-) -->
-            </LinearLayout>
-            <FrameLayout
-                android:id="@+id/expandable_indicator_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:animateLayoutChanges="true"
-                android:background="@drawable/rounded_bg_bottom_background">
-                <co.potatoproject.plugin.volume.common.AlphaOptimizedImageButton
-                    android:id="@+id/media_output"
-                    android:src="@drawable/ic_bluetooth_audio"
-                    android:layout_width="@dimen/volume_dialog_tap_target_size"
-                    android:layout_height="@dimen/volume_dialog_tap_target_size"
-                    android:visibility="gone"
-                    android:layout_marginLeft="8dp"
-                    android:layout_marginRight="8dp"
-                    android:contentDescription="@string/accessibility_volume_settings"
-                    android:background="@drawable/ripple_drawable_20dp"
-                    android:tint="?android:attr/textColorSecondary"
+                android:gravity="right"
+                android:layout_gravity="right"
+                android:orientation="vertical"
+                android:translationZ="@dimen/volume_dialog_elevation"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:background="@drawable/rounded_bg_full"
+                android:animateLayoutChanges="true" >
+                <LinearLayout
+                    android:id="@+id/volume_dialog_rows"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="@dimen/volume_dialog_panel_width"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingRight="@dimen/volume_dialog_stream_padding"
+                    android:paddingLeft="@dimen/volume_dialog_stream_padding"
+                    android:animateLayoutChanges="true">
+                        <!-- volume rows added and removed here! :-) -->
+                </LinearLayout>
+                <FrameLayout
+                    android:id="@+id/expandable_indicator_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:animateLayoutChanges="true"
-                    android:soundEffectsEnabled="false" />
+                    android:background="@drawable/rounded_bg_bottom_background">
+                    <co.potatoproject.plugin.volume.common.AlphaOptimizedImageButton
+                        android:id="@+id/media_output"
+                        android:src="@drawable/ic_bluetooth_audio"
+                        android:layout_width="@dimen/volume_dialog_tap_target_size"
+                        android:layout_height="@dimen/volume_dialog_tap_target_size"
+                        android:visibility="gone"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp"
+                        android:contentDescription="@string/accessibility_volume_settings"
+                        android:background="@drawable/ripple_drawable_20dp"
+                        android:tint="?android:attr/textColorSecondary"
+                        android:animateLayoutChanges="true"
+                        android:soundEffectsEnabled="false" />
 
-                <View
-                    android:id="@+id/dummy_button"
-                    android:layout_height="1dp"
-                    android:layout_width="1dp" />
+                    <View
+                        android:id="@+id/dummy_button"
+                        android:layout_height="1dp"
+                        android:layout_width="1dp" />
 
-                <co.potatoproject.plugin.volume.common.ExpandableIndicator
-                    android:id="@+id/expandable_indicator"
-                    android:layout_width="@dimen/volume_dialog_tap_target_size"
-                    android:layout_height="@dimen/volume_dialog_tap_target_size"
-                    android:clipToPadding="false"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:layout_marginLeft="8dp"
-                    android:layout_marginRight="8dp"
-                    android:contentDescription="@string/accessibility_quick_settings_expand"
-                    android:background="@drawable/ripple_drawable_20dp"
-                    android:tint="?android:attr/textColorSecondary"
-                    android:soundEffectsEnabled="false"
-                    android:padding="16dp"
-                    android:rotation="90" />
-            </FrameLayout>
+                    <co.potatoproject.plugin.volume.common.ExpandableIndicator
+                        android:id="@+id/expandable_indicator"
+                        android:layout_width="@dimen/volume_dialog_tap_target_size"
+                        android:layout_height="@dimen/volume_dialog_tap_target_size"
+                        android:clipToPadding="false"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp"
+                        android:contentDescription="@string/accessibility_quick_settings_expand"
+                        android:background="@drawable/ripple_drawable_20dp"
+                        android:tint="?android:attr/textColorSecondary"
+                        android:soundEffectsEnabled="false"
+                        android:padding="16dp"
+                        android:rotation="90" />
+                </FrameLayout>
+            </LinearLayout>
         </LinearLayout>
 
         <FrameLayout
@@ -152,7 +169,6 @@
                 android:soundEffectsEnabled="false"
                 sysui:optedOut="false"/>
         </FrameLayout>
-
     </LinearLayout>
 
     <ViewStub

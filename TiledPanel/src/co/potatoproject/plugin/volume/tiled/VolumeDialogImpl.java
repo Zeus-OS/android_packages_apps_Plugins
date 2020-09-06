@@ -61,6 +61,9 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.media.AudioManager;
 import android.media.AudioSystem;
+import android.media.MediaMetadata;
+import android.media.session.MediaController;
+import android.media.session.PlaybackState;
 import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
@@ -70,6 +73,7 @@ import android.os.VibrationEffect;
 import android.provider.Settings;
 import android.provider.Settings.Global;
 import android.text.InputFilter;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Slog;
 import android.util.SparseBooleanArray;
@@ -80,6 +84,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.AccessibilityDelegate;
+import android.view.View.OnLayoutChangeListener;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
 import android.view.ViewStub;
@@ -111,6 +116,8 @@ import com.android.systemui.plugins.VolumeDialogController;
 import com.android.systemui.plugins.VolumeDialogController.State;
 import com.android.systemui.plugins.VolumeDialogController.StreamState;
 import com.android.systemui.plugins.annotations.Requires;
+
+import com.synth.plugin.iota.common.*;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -193,13 +200,18 @@ public class VolumeDialogImpl implements VolumeDialog {
     private Drawable mSwitchStreamSelectedDrawable;
     private boolean mActiveStreamManuallyModified = false;
 
+    private SynthMusic mSynthMusic;
+    private View[] views;
+    private Drawable[] defaultDrawables;
+    private String[] defaultDrawablesNames;
+
     public VolumeDialogImpl() {}
 
     @Override
     public void onCreate(Context sysuiContext, Context pluginContext) {
         mSysUIR = new SysUIR(pluginContext);
         mContext = pluginContext;
-        mSysUIContext = 
+        mSysUIContext =
                 new ContextThemeWrapper(sysuiContext, mSysUIR.style("qs_theme", sysuiContext));
         mController = PluginDependency.get(this, VolumeDialogController.class);
         mKeyguard = (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
@@ -218,6 +230,11 @@ public class VolumeDialogImpl implements VolumeDialog {
 
         mController.addCallback(mControllerCallbackH, mHandler);
         mController.getState();
+    }
+
+    @Override
+    public void setMediaController(MediaController controller) {
+        mSynthMusic.initDependencies(controller, mSysUIContext);
     }
 
     @Override
@@ -259,6 +276,8 @@ public class VolumeDialogImpl implements VolumeDialog {
             }
             return false;
         });
+
+        mSynthMusic = mDialog.findViewById(R.id.synth_music_main);
 
         mDialogView = mDialog.findViewById(R.id.volume_dialog);
         mDialogView.setAlpha(0);
@@ -351,6 +370,15 @@ public class VolumeDialogImpl implements VolumeDialog {
             addExistingRows();
         }
 
+        setVariables();
+        updateTheme();
+        mDialogView.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                resizeMediaCard();
+            }
+        });
+
         mActiveStreamManuallyModified = false;
 
         updateRowsH(getActiveRow());
@@ -359,7 +387,46 @@ public class VolumeDialogImpl implements VolumeDialog {
         initRingerH();
         initODICaptionsH();
     }
-    
+
+    private void updateTheme() {
+        IotaUtils.setPaddingLocation(mSysUIContext, mLeftVolumeRocker, isLandscape(), false, mWindowParams, mDialogView, null);
+        IotaUtils.hideThings(mSysUIContext, mRinger);
+        IotaUtils.setBackgroud(mSysUIContext, views, defaultDrawables, defaultDrawablesNames);
+        mSynthMusic.initDependencies(mController.getMediaController(), mSysUIContext);
+        mSwitchStreamSelectedDrawable = getSwitchStreamSelectedDrawable();
+        updateSwitchStreamButtonsH(getActiveButton());
+        resizeMediaCard();
+    }
+
+    private void setVariables() {
+        views = (new View[] {mDialog.findViewById(R.id.main), mRinger, mOutputSwitcher, mSwitchStreamColumn, mODICaptionsView});
+        defaultDrawablesNames = (new String[] {"rounded_bg_full", "rounded_bg_full", "rounded_bg_full", "rounded_bg_full", "rounded_bg_full"});
+        setDefaultDrawables();
+    }
+
+    private void setDefaultDrawables() {
+        if (defaultDrawables == null) {
+            defaultDrawables = new Drawable[views.length];
+            for (int i = 0; i < views.length; i++) {
+                defaultDrawables[i] = views[i].getBackground();
+            }
+        }
+    }
+
+    private void resizeMediaCard() {
+        View main = mDialog.findViewById(R.id.main);
+        int fullWidth = main.getWidth() + mSwitchStreamColumn.getWidth();
+        int widthOfVisibleRows = 48 + mSwitchStreamColumn.getWidth();
+
+        for (final VolumeRow row : mRows) {
+            if (row.view.getVisibility() == View.VISIBLE) {
+                widthOfVisibleRows += mContext.getResources().getDimensionPixelSize(R.dimen.volume_dialog_panel_width);
+            }
+        }
+
+        mSynthMusic.resize(mSysUIContext, main.getHeight(), widthOfVisibleRows, false, true);
+    }
+
     private final OnComputeInternalInsetsListener mInsetsListener = internalInsetsInfo -> {
         internalInsetsInfo.touchableRegion.setEmpty();
         internalInsetsInfo.setTouchableInsets(InternalInsetsInfo.TOUCHABLE_INSETS_REGION);
@@ -435,7 +502,7 @@ public class VolumeDialogImpl implements VolumeDialog {
             stream == AudioManager.STREAM_ALARM) {
             Utils.setVisOrGone(button.view, true);
         } else Utils.setVisOrGone(button.view, false);
-            
+
         mSwitchButtons.add(button);
     }
 
@@ -444,7 +511,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         for (int i = 0; i < N; i++) {
             final VolumeRow row = mRows.get(i);
             final StreamSwitchButton button = mSwitchButtons.get(i);
-        
+
             initRow(row, row.stream, row.iconRes, row.iconMuteRes, row.important,
                     row.defaultStream);
             initStreamButton(button, row, button.stream, button.iconRes, button.iconMuteRes);
@@ -571,6 +638,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         } else {
             row.icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         }
+        resizeMediaCard();
     }
 
     private Drawable getSwitchStreamSelectedDrawable() {
@@ -578,9 +646,10 @@ public class VolumeDialogImpl implements VolumeDialog {
             mContext.getDrawable(R.drawable.rounded_ripple_selected);
 
         GradientDrawable bgDrawable = new GradientDrawable();
-            
+
         TypedArray ta = mContext.obtainStyledAttributes(new int[]{android.R.attr.dialogCornerRadius});
         float cornerRadiusDPI = ta.getDimension(0, 4f);
+        float roundValue = (float) Settings.System.getInt(mSysUIContext.getContentResolver(), Settings.System.VOLUME_DIALOG_ROUNDED_VALUE, 36);
         int alpha = getAlphaAttr(android.R.attr.secondaryContentAlpha);
         int padding = (int) TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
@@ -600,11 +669,11 @@ public class VolumeDialogImpl implements VolumeDialog {
 
         bgDrawable.setShape(GradientDrawable.RECTANGLE);
         bgDrawable.setAlpha(60);
-        bgDrawable.setCornerRadius((cornerRadius / 2) - cornerDifference);
+        bgDrawable.setCornerRadius(roundValue);
         bgDrawable.setColor(Utils.getColorAccent(mContext));
-            
+
         rippleDrawable.setDrawableByLayerId(R.id.background, bgDrawable);
-            
+
         return new InsetDrawable(rippleDrawable, padding, padding, padding, padding);
     }
 
@@ -667,8 +736,8 @@ public class VolumeDialogImpl implements VolumeDialog {
                 Utils.setVisOrGone(currentButton.row.view, false);
                 int color = Utils.getColorAttr(mSysUIContext, android.R.attr.colorForeground).getDefaultColor();
                 int alpha = getAlphaAttr(android.R.attr.secondaryContentAlpha);
-    
-                currentButton.icon.setBackgroundResource(R.drawable.rounded_ripple);
+
+                currentButton.icon.setBackgroundResource(R.drawable.ripple_drawable_20dp);
                 currentButton.icon.setColorFilter(
                     color,
                     android.graphics.PorterDuff.Mode.SRC_IN);
@@ -923,6 +992,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         }
 
         initOutputSwitcherH();
+        updateTheme();
         mDialog.getViewTreeObserver().addOnComputeInternalInsetsListener(mInsetsListener);
         if(!mShowing && !mDialog.isShown()) {
             if (!isLandscape()) mDialogView.setTranslationX((mDialogView.getWidth() / 2.0f)*(isAudioPanelOnLeftSide() ? -1 : 1));
@@ -980,8 +1050,9 @@ public class VolumeDialogImpl implements VolumeDialog {
                     AccessibilityManager.FLAG_CONTENT_TEXT
                             | AccessibilityManager.FLAG_CONTENT_CONTROLS);
         }
-        return mAccessibilityMgr.getRecommendedTimeoutMillis(DIALOG_TIMEOUT_MILLIS,
-                AccessibilityManager.FLAG_CONTENT_CONTROLS);
+        int volumeDialogTimeout = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.VOLUME_DIALOG_TIMEOUT, 3000);
+        return volumeDialogTimeout;
     }
 
     protected void dismissH(int reason) {
@@ -1198,6 +1269,7 @@ public class VolumeDialogImpl implements VolumeDialog {
             if (!mDynamic.get(row.stream)) {
                 mRows.remove(i);
                 mDialogRowsView.removeView(row.view);
+                resizeMediaCard();
             }
         }
     }
@@ -1553,7 +1625,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         @Override
         public void onConfigurationChanged() {
             if(mDialog.isShown()) {
-                mWindowManager.removeViewImmediate(mDialog);    
+                mWindowManager.removeViewImmediate(mDialog);
             }
             mConfigChanged = true;
         }
@@ -1593,6 +1665,11 @@ public class VolumeDialogImpl implements VolumeDialog {
         public void onCaptionComponentStateChanged(
                 Boolean isComponentEnabled, Boolean fromTooltip) {
             updateODICaptionsH(isComponentEnabled, fromTooltip);
+        }
+
+        @Override
+        public void onMetadataOrStateChanged(MediaMetadata metadata, @PlaybackState.State int state, MediaController mediaController) {
+            mSynthMusic.onMetadataOrStateChanged(metadata, state, mediaController);
         }
     };
 

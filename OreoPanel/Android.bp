@@ -2,7 +2,7 @@ android_app {
 
     name: "OreoPanel",
 
-    static_libs: ["VolumePluginCommon"],
+    static_libs: ["VolumePluginCommon","IotaPluginCommon"],
 
     resource_dirs: ["res"],
 

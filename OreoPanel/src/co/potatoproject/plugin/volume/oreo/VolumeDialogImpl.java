@@ -45,6 +45,9 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.AudioSystem;
+import android.media.MediaMetadata;
+import android.media.session.MediaController;
+import android.media.session.PlaybackState;
 import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
@@ -68,6 +71,7 @@ import android.view.View;
 import android.view.View.AccessibilityDelegate;
 import android.view.View.OnAttachStateChangeListener;
 import android.view.View.OnClickListener;
+import android.view.View.OnLayoutChangeListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.ViewGroup.MarginLayoutParams;
@@ -98,6 +102,8 @@ import com.android.systemui.plugins.VolumeDialogController;
 import com.android.systemui.plugins.VolumeDialogController.State;
 import com.android.systemui.plugins.VolumeDialogController.StreamState;
 import com.android.systemui.plugins.annotations.Requires;
+
+import com.synth.plugin.iota.common.*;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -169,13 +175,18 @@ public class VolumeDialogImpl implements VolumeDialog {
     private boolean mHovering = false;
     private int mDensity;
 
+    private SynthMusic mSynthMusic;
+    private View[] views;
+    private Drawable[] defaultDrawables;
+    private String[] defaultDrawablesNames;
+
     public VolumeDialogImpl() {}
 
     @Override
     public void onCreate(Context sysuiContext, Context pluginContext) {
         mSysUIR = new SysUIR(pluginContext);
         mContext = pluginContext;
-        mSysUIContext = 
+        mSysUIContext =
                 new ContextThemeWrapper(sysuiContext, mSysUIR.style("qs_theme", sysuiContext));
         mController = PluginDependency.get(this, VolumeDialogController.class);
         mKeyguard = (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
@@ -200,6 +211,11 @@ public class VolumeDialogImpl implements VolumeDialog {
     }
 
     @Override
+    public void setMediaController(MediaController controller) {
+        mSynthMusic.initDependencies(controller, mSysUIContext);
+    }
+
+    @Override
     public void destroy() {
         mAccessibility.destroy();
         mController.removeCallback(mControllerCallbackH);
@@ -208,7 +224,7 @@ public class VolumeDialogImpl implements VolumeDialog {
 
     private void initDialog() {
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
-        
+
         mSysUIContext.getTheme().applyStyle(mSysUIContext.getThemeResId(), true);
         mSysUIContext.getTheme().rebase();
         mContext.getTheme().setTo(mSysUIContext.getTheme());
@@ -241,6 +257,8 @@ public class VolumeDialogImpl implements VolumeDialog {
             }
             return false;
         });
+
+        mSynthMusic = mDialog.findViewById(R.id.synth_music_main);
 
         mDialogView = (ViewGroup) mDialog.findViewById(R.id.volume_dialog);
         mDialogView.setOnHoverListener(new View.OnHoverListener() {
@@ -307,22 +325,73 @@ public class VolumeDialogImpl implements VolumeDialog {
         } else {
             addExistingRows();
         }
+
+        setVariables();
+        updateTheme();
+        mDialogView.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                resizeMediaCard();
+            }
+        });
+
         mExpandButtonAnimationDuration = 300;
         initRingerH();
     }
-    
+
+    private void updateTheme() {
+        IotaUtils.setPaddingLocation(mSysUIContext, false, isLandscape(), true, mWindowParams, mDialog.findViewById(R.id.container), null);
+        IotaUtils.hideThings(mSysUIContext, mRinger);
+        IotaUtils.setBackgroud(mSysUIContext, views, defaultDrawables, defaultDrawablesNames);
+        mSynthMusic.initDependencies(mController.getMediaController(), mSysUIContext);
+        resizeMediaCard();
+    }
+
+    private void setVariables() {
+        views = (new View[] {mDialog.findViewById(R.id.main), mRinger});
+        defaultDrawablesNames = (new String[] {"rounded_bg_full", "rounded_bg_full"});
+        setDefaultDrawables();
+    }
+
+    private void setDefaultDrawables() {
+        if (defaultDrawables == null) {
+            defaultDrawables = new Drawable[views.length];
+            for (int i = 0; i < views.length; i++) {
+                defaultDrawables[i] = views[i].getBackground();
+            }
+        }
+    }
+
+    private void resizeMediaCard() {
+        int fullRowsWidth = 0;
+        DisplayMetrics displayMetrics = mSysUIContext.getResources().getDisplayMetrics();
+        View container = mDialog.findViewById(R.id.container);
+        ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) mSynthMusic.getLayoutParams();
+
+        lp.height = mExpandButton.getHeight() * 3;
+        lp.width = mDialogView.getWidth();
+        lp.setMargins(48,20,48,20);
+        mSynthMusic.setLayoutParams(lp);
+    }
+
     private final OnComputeInternalInsetsListener mInsetsListener = internalInsetsInfo -> {
         internalInsetsInfo.touchableRegion.setEmpty();
         internalInsetsInfo.setTouchableInsets(InternalInsetsInfo.TOUCHABLE_INSETS_REGION);
+        View container = mDialog.findViewById(R.id.container);
         int[] dialogViewLocation = new int[2];
-        mDialogView.getLocationOnScreen(dialogViewLocation);
+        container.getLocationOnScreen(dialogViewLocation);
         internalInsetsInfo.touchableRegion.set(new Region(
             dialogViewLocation[0],
             dialogViewLocation[1],
-            dialogViewLocation[0] + mDialogView.getWidth(),
-            dialogViewLocation[1] + mDialogView.getHeight()
+            dialogViewLocation[0] + container.getWidth(),
+            dialogViewLocation[1] + container.getHeight()
         ));
     };
+
+    private boolean isLandscape() {
+        return mContext.getResources().getConfiguration().orientation ==
+                Configuration.ORIENTATION_LANDSCAPE;
+    }
 
     private ColorStateList loadColorStateList(int colorResId) {
         return ColorStateList.valueOf(mContext.getColor(colorResId));
@@ -492,6 +561,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         } else {
             row.icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         }
+        resizeMediaCard();
     }
 
     public void show(int reason) {
@@ -507,6 +577,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         mHandler.removeMessages(H.SHOW);
         mHandler.removeMessages(H.DISMISS);
         rescheduleTimeoutH();
+        updateTheme();
         if (mShowing) return;
         mShowing = true;
         mDialog.getViewTreeObserver().addOnComputeInternalInsetsListener(mInsetsListener);
@@ -528,9 +599,11 @@ public class VolumeDialogImpl implements VolumeDialog {
         if (mAccessibility.mFeedbackEnabled) return 20000;
         if (mHovering) return 16000;
         if (mSafetyWarning != null) return 5000;
-        if (mExpanded || mExpandButtonAnimationRunning) return 5000;
-        if (mActiveStream == AudioManager.STREAM_MUSIC) return 1500;
-        return 3000;
+        //if (mExpanded || mExpandButtonAnimationRunning) return 5000;
+        //if (mActiveStream == AudioManager.STREAM_MUSIC) return 1500;
+        int volumeDialogTimeout = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.VOLUME_DIALOG_TIMEOUT, 3000);
+        return volumeDialogTimeout;
     }
 
     protected void dismissH(int reason) {
@@ -853,6 +926,7 @@ public class VolumeDialogImpl implements VolumeDialog {
             if (!mDynamic.get(row.stream)) {
                 mRows.remove(i);
                 mDialogRowsView.removeView(row.view);
+                resizeMediaCard();
             }
         }
     }
@@ -1261,6 +1335,11 @@ public class VolumeDialogImpl implements VolumeDialog {
         @Override
         public void onCaptionComponentStateChanged(
                 Boolean isComponentEnabled, Boolean fromTooltip) {}
+
+        @Override
+        public void onMetadataOrStateChanged(MediaMetadata metadata, @PlaybackState.State int state, MediaController mediaController) {
+            mSynthMusic.onMetadataOrStateChanged(metadata, state, mediaController);
+        }
     };
 
     private final OnClickListener mClickExpand = new OnClickListener() {

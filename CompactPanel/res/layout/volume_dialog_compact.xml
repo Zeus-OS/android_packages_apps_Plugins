@@ -70,7 +70,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:gravity="center"
-                    android:background="@drawable/rounded_bg_full"
+                    android:background="@android:color/transparent"
                     android:orientation="horizontal"
                     android:animateLayoutChanges="true">
                         <!-- volume rows added and removed here! :-) -->
@@ -109,7 +109,7 @@
                     <co.potatoproject.plugin.volume.common.CaptionsToggleImageButton
                         android:id="@+id/odi_captions_icon"
                         style="@style/VolumeButtons"
-                        android:background="@drawable/rounded_ripple"
+                        android:background="@drawable/ripple_drawable_20dp"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:tint="@color/caption_tint_color_selector"
@@ -131,7 +131,7 @@
                         android:layout_gravity="center"
                         style="@style/VolumeButtons"
                         android:contentDescription="@string/accessibility_volume_settings"
-                        android:background="@drawable/rounded_ripple"
+                        android:background="@drawable/ripple_drawable_20dp"
                         android:tint="?android:attr/textColorSecondary"
                         android:soundEffectsEnabled="false" />
                 </FrameLayout>
@@ -145,16 +145,16 @@
                 android:translationZ="@dimen/volume_dialog_fancy_elevation"
                 android:layout_gravity="right"
                 android:orientation="vertical">
-                
+
                 <FrameLayout
                     android:id="@+id/ringer"
                     android:layout_width="@dimen/volume_dialog_ringer_size"
                     android:layout_height="@dimen/volume_dialog_ringer_size"
-                    android:background="@drawable/rounded_bg_full">
+                    android:background="@android:color/transparent">
                     <co.potatoproject.plugin.volume.common.AlphaOptimizedImageButton
                         android:id="@+id/ringer_icon"
                         style="@style/VolumeButtons"
-                        android:background="@drawable/rounded_ripple"
+                        android:background="@drawable/ripple_drawable_20dp"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:scaleType="fitCenter"
@@ -189,6 +189,9 @@
             </LinearLayout>
         </FrameLayout>
 
+        <include layout="@layout/synth_media_card"
+            android:layout_width="200dp"
+            android:layout_height="200dp"/>
     </LinearLayout>
 
     <ViewStub

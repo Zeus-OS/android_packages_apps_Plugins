@@ -4,6 +4,7 @@ android_app {
 
     static_libs: [
         "VolumePluginCommon",
+        "IotaPluginCommon",
     ],
 
     resource_dirs: ["res"],
