@@ -2,9 +2,7 @@ android_app {
 
     name: "TiledPanel",
 
-    static_libs: [
-        "VolumePluginCommon",
-    ],
+    static_libs: ["VolumePluginCommon"],
 
     resource_dirs: ["res"],
 
